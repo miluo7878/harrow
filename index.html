@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>你四凤了</title>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f7f8;
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+
+  /* 中央大字 */
+  h1 {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    font-size: clamp(32px, 12vw, 120px);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #1f2328;
+    user-select: none;
+  }
+
+  /* 背景文字墙 */
+  .bg-grid {
+    position: fixed;
+    z-index: 0;
+    inset: -30%;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    gap: 0.15em 0.35em;
+    transform: rotate(-16deg);
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .bg-grid span {
+    font-size: clamp(36px, 6vw, 84px);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(31, 35, 40, 0.13);
+  }
+
+  /* 两侧竖排滚动 */
+  .side {
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    width: clamp(24px, 4vw, 48px);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .side--left { left: 4px; }
+  .side--right { right: 4px; }
+  .side span {
+    display: block;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    white-space: nowrap;
+    font-size: clamp(15px, 2.4vw, 28px);
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    animation: scrollY 26s linear infinite;
+  }
+  .side--right span { animation-direction: reverse; animation-duration: 32s; }
+  @keyframes scrollY {
+    from { transform: translateY(0); }
+    to { transform: translateY(-50%); }
+  }
+
+  /* 上下跑马灯 */
+  .marquee {
+    position: fixed;
+    z-index: 4;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .marquee--top { top: 10px; }
+  .marquee--bottom { bottom: 12px; }
+  .track {
+    display: flex;
+    width: max-content;
+    animation: slide 20s linear infinite;
+  }
+  .marquee--bottom .track {
+    animation-direction: reverse;
+    animation-duration: 26s;
+  }
+  .half {
+    display: flex;
+    flex: 0 0 auto;
+  }
+  .half span {
+    padding-right: 1.6em;
+    font-size: clamp(17px, 2.8vw, 32px);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    background: linear-gradient(90deg, #ff2d55, #ff9500, #ffcc00, #34c759, #00c7ff, #5856d6, #ff2d55);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: hueSlide 6s linear infinite;
+  }
+  @keyframes slide {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes hueSlide {
+    to { background-position: 200% 0; }
+  }
+
+  /* 散落的各种样式 */
+  .scatter {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .scatter span {
+    position: absolute;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    font-size: clamp(18px, 3vw, 42px);
+  }
+  /* 空心描边 */
+  .s1 {
+    top: 16%;
+    left: 6%;
+    font-size: clamp(30px, 5vw, 68px) !important;
+    color: transparent;
+    -webkit-text-stroke: 1.5px #5856d6;
+    transform: rotate(-9deg);
+    opacity: 0.7;
+  }
+  /* 模糊重影 */
+  .s2 {
+    top: 26%;
+    right: 8%;
+    color: #ff2d55;
+    transform: rotate(7deg);
+    filter: blur(2.5px);
+    opacity: 0.55;
+  }
+  /* 镜像 */
+  .s3 {
+    bottom: 22%;
+    left: 9%;
+    color: #34c759;
+    transform: scaleX(-1) rotate(-4deg);
+    opacity: 0.8;
+  }
+  /* 竖排小字 */
+  .s4 {
+    top: 40%;
+    right: 20%;
+    writing-mode: vertical-rl;
+    color: #ff9500;
+    letter-spacing: 0.2em;
+    font-size: clamp(15px, 2.2vw, 26px) !important;
+    opacity: 0.85;
+  }
+  /* 描边 + 光晕 */
+  .s5 {
+    bottom: 14%;
+    right: 12%;
+    color: #00c7ff;
+    text-shadow: 2px 2px 0 #fff, 4px 4px 0 rgba(0, 199, 255, 0.35);
+    transform: rotate(-3deg);
+  }
+  /* 倾斜虚线感 */
+  .s6 {
+    top: 62%;
+    left: 24%;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255, 45, 85, 0.65);
+    transform: rotate(14deg);
+    opacity: 0.8;
+  }
+  /* 彩虹渐变 */
+  .s7 {
+    top: 12%;
+    right: 26%;
+    font-size: clamp(20px, 3.4vw, 46px) !important;
+    background: linear-gradient(90deg, #ff2d55, #ffcc00, #34c759, #00c7ff, #5856d6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    transform: rotate(5deg);
+  }
+
+  /* 弹跳画布 */
+  #fx {
+    position: fixed;
+    z-index: 3;
+    inset: 0;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="bg-grid" id="bgGrid" aria-hidden="true"></div>
+
+  <div class="side side--left" aria-hidden="true"><span id="vtLeft"></span></div>
+  <div class="side side--right" aria-hidden="true"><span id="vtRight"></span></div>
+
+  <div class="marquee marquee--top" aria-hidden="true"><div class="track"></div></div>
+  <div class="marquee marquee--bottom" aria-hidden="true"><div class="track"></div></div>
+
+  <h1>你四凤了</h1>
+
+  <div class="scatter" aria-hidden="true">
+    <span class="s1">你四凤了</span>
+    <span class="s2">你四凤了</span>
+    <span class="s3">你四凤了</span>
+    <span class="s4">你四凤了</span>
+    <span class="s5">你四凤了</span>
+    <span class="s6">你四凤了</span>
+    <span class="s7">你四凤了</span>
+  </div>
+
+  <canvas id="fx"></canvas>
+
+<script>
+(function () {
+  var TEXT = '你四凤了';
+
+  /* 背景文字墙 */
+  var grid = document.getElementById('bgGrid');
+  var wall = '';
+  for (var i = 0; i < 80; i++) wall += '<span>' + TEXT + '</span>';
+  grid.innerHTML = wall;
+
+  /* 上下跑马灯：两段完全相同的内容，位移 50% 实现无缝 */
+  var halves = '<div class="half">';
+  for (var j = 0; j < 10; j++) halves += '<span>' + TEXT + '</span>';
+  halves += '</div>';
+  document.querySelectorAll('.track').forEach(function (track) {
+    track.innerHTML = halves + halves;
+  });
+
+  /* 两侧竖排滚动：内容再复制一遍，位移 50% 无缝 */
+  var verticalText = '';
+  for (var k = 0; k < 40; k++) verticalText += TEXT + '　';
+  document.getElementById('vtLeft').textContent = verticalText + verticalText;
+  document.getElementById('vtRight').textContent = verticalText + verticalText;
+
+  /* ---------- 弹跳彩色字 ---------- */
+  var canvas = document.getElementById('fx');
+  var ctx = canvas.getContext('2d');
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var FONT = '"PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
+
+  var W = 0, H = 0;
+  var items = [];
+  var last = 0;
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function build() {
+    items = [];
+    var count = Math.max(8, Math.min(30, Math.round(W * H / 65000)));
+    var base = Math.max(16, Math.min(64, Math.min(W, H) * 0.075));
+
+    for (var i = 0; i < count; i++) {
+      var size = rand(base * 0.45, base * 1.25);
+      ctx.font = '800 ' + size + 'px ' + FONT;
+      var w = ctx.measureText(TEXT).width;
+      var speed = rand(40, 110);
+      var dir = rand(0, Math.PI * 2);
+
+      items.push({
+        x: rand(w / 2, Math.max(w / 2 + 1, W - w / 2)),
+        y: rand(size / 2, Math.max(size / 2 + 1, H - size / 2)),
+        vx: Math.cos(dir) * speed,
+        vy: Math.sin(dir) * speed,
+        size: size,
+        w: w,
+        h: size,
+        angle: rand(-0.18, 0.18),
+        spin: rand(-0.5, 0.5),
+        hue: rand(0, 360),
+        hueSpeed: rand(30, 90)
+      });
+    }
+  }
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    build();
+  }
+
+  function update(it, dt) {
+    it.x += it.vx * dt;
+    it.y += it.vy * dt;
+    it.angle += it.spin * dt;
+    it.hue = (it.hue + it.hueSpeed * dt) % 360;
+
+    var c = Math.abs(Math.cos(it.angle));
+    var s = Math.abs(Math.sin(it.angle));
+    var hw = (it.w / 2) * c + (it.h / 2) * s;
+    var hh = (it.w / 2) * s + (it.h / 2) * c;
+
+    if (it.x - hw < 0) { it.x = hw; it.vx = Math.abs(it.vx); }
+    if (it.x + hw > W) { it.x = W - hw; it.vx = -Math.abs(it.vx); }
+    if (it.y - hh < 0) { it.y = hh; it.vy = Math.abs(it.vy); }
+    if (it.y + hh > H) { it.y = H - hh; it.vy = -Math.abs(it.vy); }
+  }
+
+  function draw(it) {
+    var g = ctx.createLinearGradient(-it.w / 2, 0, it.w / 2, 0);
+    g.addColorStop(0, 'hsl(' + it.hue + ', 90%, 58%)');
+    g.addColorStop(0.5, 'hsl(' + ((it.hue + 60) % 360) + ', 90%, 60%)');
+    g.addColorStop(1, 'hsl(' + ((it.hue + 120) % 360) + ', 90%, 55%)');
+
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.angle);
+    ctx.font = '800 ' + it.size + 'px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'hsla(' + it.hue + ', 90%, 60%, 0.5)';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = g;
+    ctx.fillText(TEXT, 0, 0);
+    ctx.restore();
+  }
+
+  function tick(now) {
+    var dt = last ? Math.min((now - last) / 1000, 0.05) : 0;
+    last = now;
+
+    ctx.clearRect(0, 0, W, H);
+    for (var i = 0; i < items.length; i++) {
+      update(items[i], dt);
+      draw(items[i]);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
