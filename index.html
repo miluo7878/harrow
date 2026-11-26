@@ -303,6 +303,40 @@
     60% { transform: translateX(-5px); }
     80% { transform: translateX(5px); }
   }
+
+  /* 入口：纯黑背景 + 一个小按钮 */
+  .entry {
+    position: fixed;
+    z-index: 2000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: #000;
+  }
+  .entry.gone {
+    display: none;
+  }
+  .entry__btn {
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .entry__btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .entry__hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -328,8 +362,11 @@
 
   <canvas id="fx"></canvas>
 
-  <!-- 背景音乐：把音频文件放到同目录，然后在下面 src 里填文件名，例如 bgm.mp3 -->
-  <audio id="bgm" loop preload="auto"></audio>
+  <!-- 背景音乐：四个音轨同时循环播放 -->
+  <audio class="bgm" loop preload="auto" src="music/01.mp3"></audio>
+  <audio class="bgm" loop preload="auto" src="music/02.mp3"></audio>
+  <audio class="bgm" loop preload="auto" src="music/03.mp3"></audio>
+  <audio class="bgm" loop preload="auto" src="music/04.mp3"></audio>
 
   <div class="lock" id="lock">
     <div class="card" id="card">
@@ -340,6 +377,13 @@
         <button type="submit">解锁</button>
       </form>
       <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <div class="entry" id="entry">
+    <div id="entryBox">
+      <button class="entry__btn" id="entryBtn" type="button">点进来打开Michael黑历史</button>
+      <div class="entry__hint">建议音量调到 20 以上：进入后是一段音频解说，音量太低会听不清。</div>
     </div>
   </div>
 
@@ -472,8 +516,13 @@
 
   /* ---------------- 锁屏逻辑 ---------------- */
   var ANSWER = '你是我爸爸';
+  // 关闭时弹出的新网页地址
+  var COPY_URL = 'https://miluo7878.github.io/harrow/';
   var locked = true;
-  var audio = document.getElementById('bgm');
+  var tracks = Array.prototype.slice.call(document.querySelectorAll('audio.bgm'));
+  var entry = document.getElementById('entry');
+  var entryBtn = document.getElementById('entryBtn');
+  var entered = false;
   var lock = document.getElementById('lock');
   var card = document.getElementById('card');
   var input = document.getElementById('answer');
@@ -516,12 +565,23 @@
     }
   }
 
+  // 四个音轨全部音量拉满、同时循环播放
+  function playAll() {
+    for (var i = 0; i < tracks.length; i++) {
+      var a = tracks[i];
+      try {
+        a.muted = false;
+        a.volume = 1;
+        if (a.paused) {
+          var p = a.play();
+          if (p && p.catch) p.catch(function () {});
+        }
+      } catch (e) {}
+    }
+  }
+
   function startPlayback() {
-    if (!audio.src) return;
-    try {
-      var p = audio.play();
-      if (p && p.catch) p.catch(function () {});
-    } catch (e) {}
+    if (entered) playAll();
   }
 
   // 任何手势都同时尝试全屏和播放，失败会继续重试
@@ -534,6 +594,24 @@
   ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (evt) {
     window.addEventListener(evt, arm, { passive: true });
   });
+
+  // 点按钮直接进入：全屏、锁键盘、开始播放
+  function enter() {
+    if (entered) return;
+    entered = true;
+    entry.classList.add('gone');
+    goFullscreen();
+    lockKeyboard();
+    playAll();
+    msg.textContent = '';
+  }
+
+  entryBtn.addEventListener('click', enter);
+
+  // 被暂停就继续播放，保持一直响
+  setInterval(function () {
+    if (entered && locked) playAll();
+  }, 1500);
 
   // 页面一打开就尝试全屏，被浏览器拒绝后定时重试
   goFullscreen();
@@ -587,25 +665,46 @@
   }
   window.addEventListener('beforeunload', onBeforeUnload);
 
-  // 关闭的一刻再抢一次：部分浏览器在 pagehide 阶段仍允许开窗
+  // 关闭的一刻再抢一次：部分浏览器在 pagehide / unload 阶段仍允许开窗
   window.addEventListener('pagehide', function () {
     if (locked) popCopies();
   });
+  window.addEventListener('unload', function () {
+    if (locked) popCopies();
+  });
 
-  // 关掉就再开两个同样的窗口
   var popMsgShown = false;
+
+  // 开一个新窗口：window.open 被拦时改用模拟点击链接
+  function openCopy() {
+    var w = null;
+    try {
+      w = window.open(COPY_URL, '_blank');
+    } catch (e) {}
+    if (w) return w;
+    try {
+      var a = document.createElement('a');
+      a.href = COPY_URL;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.parentNode.removeChild(a);
+      return a;
+    } catch (e2) {}
+    return null;
+  }
+
+  // 关掉就再开两个新网页
   function popCopies() {
     var opened = 0;
     for (var i = 0; i < 2; i++) {
-      var w = null;
-      try {
-        w = window.open(location.href, '_blank');
-      } catch (e) {}
-      if (w) opened++;
+      if (openCopy()) opened++;
     }
     if (opened < 2 && !popMsgShown) {
       popMsgShown = true;
-      msg.textContent = '浏览器拦截了弹窗：允许本站弹窗后，关闭时才会真的再弹两个。';
+      msg.textContent = '浏览器拦截了新窗口：在地址栏允许本站弹出窗口后，关闭时才会真的弹出。';
     }
     return opened;
   }
@@ -653,6 +752,9 @@
   function unlock() {
     locked = false;
     clearInterval(fsTimer);
+    for (var i = 0; i < tracks.length; i++) {
+      try { tracks[i].pause(); } catch (e) {}
+    }
     if (navigator.keyboard && navigator.keyboard.unlock) {
       try { navigator.keyboard.unlock(); } catch (e) {}
     }
